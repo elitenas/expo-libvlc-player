@@ -92,6 +92,8 @@ fun LibVlcPlayerView.setMediaPlayerListener() {
                     Event.ESAdded -> {
                         val mediaTracks = getMediaTracks()
 
+                        applyContentFit()
+
                         onESAdded(mediaTracks)
                     }
                 }

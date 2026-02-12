@@ -3,6 +3,7 @@ package expo.modules.libvlcplayer
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.libvlcplayer.enums.AudioMixingMode
+import expo.modules.libvlcplayer.enums.ContentFit
 import expo.modules.libvlcplayer.records.Slave
 import expo.modules.libvlcplayer.records.Tracks
 
@@ -73,6 +74,10 @@ class LibVlcPlayerModule : Module() {
 
                 Prop("aspectRatio") { view: LibVlcPlayerView, aspectRatio: String? ->
                     view.aspectRatio = aspectRatio
+                }
+
+                Prop("contentFit") { view: LibVlcPlayerView, contentFit: ContentFit? ->
+                    view.contentFit = contentFit ?: ContentFit.CONTAIN
                 }
 
                 Prop("rate") { view: LibVlcPlayerView, rate: Float? ->

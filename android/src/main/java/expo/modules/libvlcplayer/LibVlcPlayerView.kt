@@ -1,11 +1,15 @@
 package expo.modules.libvlcplayer
 
 import android.content.Context
+import android.graphics.Matrix
 import android.net.Uri
+import android.view.TextureView
+import android.view.ViewGroup
 import expo.modules.kotlin.AppContext
 import expo.modules.kotlin.viewevent.EventDispatcher
 import expo.modules.kotlin.views.ExpoView
 import expo.modules.libvlcplayer.enums.AudioMixingMode
+import expo.modules.libvlcplayer.enums.ContentFit
 import expo.modules.libvlcplayer.records.Dialog
 import expo.modules.libvlcplayer.records.MediaInfo
 import expo.modules.libvlcplayer.records.MediaTracks
@@ -288,6 +292,8 @@ class LibVlcPlayerView(
                 player.setAspectRatio(aspectRatio)
             }
 
+            applyContentFit()
+
             time = DEFAULT_PLAYER_TIME
         }
     }
@@ -334,6 +340,93 @@ class LibVlcPlayerView(
             field = value
             mediaPlayer?.setAspectRatio(value)
         }
+
+    var contentFit: ContentFit = ContentFit.CONTAIN
+        set(value) {
+            field = value
+            applyContentFit()
+        }
+
+    fun applyContentFit() {
+        val viewWidth = playerView.width.toFloat()
+        val viewHeight = playerView.height.toFloat()
+
+        if (viewWidth <= 0 || viewHeight <= 0) return
+
+        val textureView = findTextureView(playerView) ?: return
+
+        when (contentFit) {
+            ContentFit.CONTAIN -> {
+                textureView.setTransform(Matrix())
+            }
+
+            ContentFit.COVER -> {
+                val player = mediaPlayer ?: return
+                val videoTrack = player.getCurrentVideoTrack() ?: return
+
+                val videoWidth = videoTrack.width.toFloat()
+                val videoHeight = videoTrack.height.toFloat()
+
+                if (videoWidth <= 0 || videoHeight <= 0) return
+
+                val videoAspect = videoWidth / videoHeight
+                val viewAspect = viewWidth / viewHeight
+
+                val matrix = Matrix()
+
+                val scale: Float =
+                    if (videoAspect > viewAspect) {
+                        videoAspect / viewAspect
+                    } else {
+                        viewAspect / videoAspect
+                    }
+
+                matrix.setScale(scale, scale, viewWidth / 2f, viewHeight / 2f)
+                textureView.setTransform(matrix)
+            }
+
+            ContentFit.FILL -> {
+                val player = mediaPlayer ?: return
+                val videoTrack = player.getCurrentVideoTrack() ?: return
+
+                val videoWidth = videoTrack.width.toFloat()
+                val videoHeight = videoTrack.height.toFloat()
+
+                if (videoWidth <= 0 || videoHeight <= 0) return
+
+                val videoAspect = videoWidth / videoHeight
+                val viewAspect = viewWidth / viewHeight
+
+                val matrix = Matrix()
+
+                val scaleX: Float
+                val scaleY: Float
+
+                if (videoAspect > viewAspect) {
+                    scaleX = 1f
+                    scaleY = videoAspect / viewAspect
+                } else {
+                    scaleX = viewAspect / videoAspect
+                    scaleY = 1f
+                }
+
+                matrix.setScale(scaleX, scaleY, viewWidth / 2f, viewHeight / 2f)
+                textureView.setTransform(matrix)
+            }
+        }
+    }
+
+    private fun findTextureView(parent: ViewGroup): TextureView? {
+        for (i in 0 until parent.childCount) {
+            val child = parent.getChildAt(i)
+            if (child is TextureView) return child
+            if (child is ViewGroup) {
+                val found = findTextureView(child)
+                if (found != null) return found
+            }
+        }
+        return null
+    }
 
     var rate: Float = DEFAULT_PLAYER_RATE
         set(value) {
